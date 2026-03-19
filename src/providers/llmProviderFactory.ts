@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { LLMProvider, LLMProviderType } from './llmProvider';
 import { ClaudeApiProvider } from './claudeApiProvider';
 import { ClaudeCodeProvider } from './claudeCodeProvider';
+import { CodexAppServerProvider } from './codexAppServerProvider';
 import { Logger } from '../services/logger';
 
 export class LLMProviderFactory {
@@ -50,6 +51,9 @@ export class LLMProviderFactory {
         Logger.info(`Creating provider of type: ${providerType}`);
         
         switch (providerType) {
+            case LLMProviderType.CODEX:
+                return new CodexAppServerProvider(this.outputChannel);
+
             case LLMProviderType.CLAUDE_API:
                 return new ClaudeApiProvider(this.outputChannel);
             
@@ -63,10 +67,12 @@ export class LLMProviderFactory {
 
     private getConfiguredProviderType(): LLMProviderType {
         const config = vscode.workspace.getConfiguration('superdesign');
-        const providerType = config.get<string>('llmProvider', 'claude-api');
+        const providerType = config.get<string>('llmProvider', 'codex');
         
         // Map string to enum
         switch (providerType.toLowerCase()) {
+            case 'codex':
+                return LLMProviderType.CODEX;
             case 'claude-code':
                 return LLMProviderType.CLAUDE_CODE;
             case 'claude-api':
@@ -106,6 +112,11 @@ export class LLMProviderFactory {
     getAvailableProviders(): { type: LLMProviderType; name: string; description: string }[] {
         return [
             {
+                type: LLMProviderType.CODEX,
+                name: 'Codex App Server',
+                description: 'Uses local Codex CLI app-server for streamed chat and tool events'
+            },
+            {
                 type: LLMProviderType.CLAUDE_API,
                 name: 'Claude API',
                 description: 'Uses Anthropic API key to communicate with Claude via SDK'
@@ -132,6 +143,9 @@ export class LLMProviderFactory {
                 let errorMessage = '';
                 
                 switch (providerType) {
+                    case LLMProviderType.CODEX:
+                        errorMessage = 'Codex CLI is not available or not logged in. Run `codex login` and check the codexPath setting.';
+                        break;
                     case LLMProviderType.CLAUDE_API:
                         errorMessage = 'API key is required for Claude API provider';
                         break;

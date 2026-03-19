@@ -129,16 +129,17 @@ export class ChatMessageService {
             if (this.agentService.isApiKeyAuthError(errorMessage) || !this.agentService.hasApiKey()) {
                 // Determine which provider is currently selected to show specific error
                 const config = vscode.workspace.getConfiguration('superdesign');
+                const llmProvider = config.get<string>('llmProvider', 'codex');
                 const specificModel = config.get<string>('aiModel');
                 const provider = config.get<string>('aiModelProvider', 'anthropic');
                 const openaiUrl = config.get<string>('openaiUrl');
                 
                 // Determine provider from model name if specific model is set, ignore if custom openai url is used
-                let effectiveProvider = provider;
+                let effectiveProvider = llmProvider === 'codex' ? 'codex' : provider;
                 let providerName = 'AI';
-                let configureCommand = 'superdesign.configureApiKey';
+                let configureCommand = 'superdesign.setupCodexCli';
                 
-                if (specificModel && !(!openaiUrl && provider === 'openai')) {
+                if (llmProvider !== 'codex' && specificModel && !(!openaiUrl && provider === 'openai')) {
                     if (specificModel.includes('/')) {
                         effectiveProvider = 'openrouter';
                     } else if (specificModel.startsWith('claude-')) {
@@ -149,6 +150,10 @@ export class ChatMessageService {
                 }
                 
                 switch (effectiveProvider) {
+                    case 'codex':
+                        providerName = 'Codex CLI';
+                        configureCommand = 'superdesign.setupCodexCli';
+                        break;
                     case 'openrouter':
                         providerName = 'OpenRouter';
                         configureCommand = 'superdesign.configureOpenRouterApiKey';
@@ -168,15 +173,17 @@ export class ChatMessageService {
                 }
                 
                 const hasApiKey = this.agentService.hasApiKey();
-                const displayMessage = hasApiKey ? 
-                    `Invalid ${providerName} API key. Please check your configuration.` : 
-                    `${providerName} API key not configured. Please set up your API key to use this AI model.`;
+                const displayMessage = effectiveProvider === 'codex'
+                    ? `Codex CLI is not ready. Make sure the codex binary is installed and you are logged in with \`codex login\`.`
+                    : hasApiKey
+                        ? `Invalid ${providerName} API key. Please check your configuration.`
+                        : `${providerName} API key not configured. Please set up your API key to use this AI model.`;
                     
                 webview.postMessage({
                     command: 'chatErrorWithActions',
                     error: displayMessage,
                     actions: [
-                        { text: `Configure ${providerName} API Key`, command: configureCommand },
+                        { text: effectiveProvider === 'codex' ? 'Setup Codex CLI' : `Configure ${providerName} API Key`, command: configureCommand },
                         { text: 'Open Settings', command: 'workbench.action.openSettings', args: '@ext:iganbold.superdesign' }
                     ]
                 });

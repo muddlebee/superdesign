@@ -5,6 +5,7 @@ import { CustomAgentService } from './services/customAgentService';
 import { ChatSidebarProvider } from './providers/chatSidebarProvider';
 import { Logger, LogLevel } from './services/logger';
 import * as path from 'path';
+import { spawn } from 'child_process';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -1266,6 +1267,10 @@ export function activate(context: vscode.ExtensionContext) {
 		await configureAnthropicApiKey();
 	});
 
+	const setupCodexCliDisposable = vscode.commands.registerCommand('superdesign.setupCodexCli', async () => {
+		await setupCodexCli();
+	});
+
 	const configureOpenAIApiKeyDisposable = vscode.commands.registerCommand('superdesign.configureOpenAIApiKey', async () => {
 		await configureOpenAIApiKey();
 	});
@@ -1303,7 +1308,8 @@ export function activate(context: vscode.ExtensionContext) {
 	});
 
 	// Register clear chat command
-	const clearChatDisposable = vscode.commands.registerCommand('superdesign.clearChat', () => {
+	const clearChatDisposable = vscode.commands.registerCommand('superdesign.clearChat', async () => {
+		await customAgent.resetConversationSession();
 		sidebarProvider.sendMessage({
 			command: 'clearChat'
 		});
@@ -1393,6 +1399,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		helloWorldDisposable, 
 		configureApiKeyDisposable,
+		setupCodexCliDisposable,
 		configureOpenAIApiKeyDisposable,
 		configureOpenRouterApiKeyDisposable,
     configureOpenAIUrlDisposable,
@@ -1448,6 +1455,75 @@ async function configureAnthropicApiKey() {
 			vscode.window.showInformationMessage('API key unchanged (already configured)');
 		} else {
 			vscode.window.showWarningMessage('No API key was set');
+		}
+	}
+}
+
+async function runCodexCommand(codexPath: string, args: string[]): Promise<{ stdout: string; stderr: string; exitCode: number | null }> {
+	return await new Promise((resolve, reject) => {
+		const child = spawn(codexPath, args, {
+			stdio: 'pipe',
+			shell: false,
+			env: { ...process.env }
+		});
+
+		let stdout = '';
+		let stderr = '';
+
+		child.stdout?.on('data', (data) => {
+			stdout += data.toString();
+		});
+
+		child.stderr?.on('data', (data) => {
+			stderr += data.toString();
+		});
+
+		child.on('error', reject);
+		child.on('close', (exitCode) => resolve({ stdout, stderr, exitCode }));
+	});
+}
+
+async function setupCodexCli() {
+	const config = vscode.workspace.getConfiguration('superdesign');
+	const codexPath = config.get<string>('codexPath', 'codex');
+
+	try {
+		const helpResult = await runCodexCommand(codexPath, ['--help']);
+		if (helpResult.exitCode !== 0) {
+			throw new Error(helpResult.stderr || helpResult.stdout || 'Unable to run codex --help');
+		}
+
+		const loginResult = await runCodexCommand(codexPath, ['login', 'status']);
+		const combinedOutput = `${loginResult.stdout}\n${loginResult.stderr}`.toLowerCase();
+
+		if (!combinedOutput.includes('logged in')) {
+			const selection = await vscode.window.showWarningMessage(
+				'Codex CLI was found, but you are not logged in. Run `codex login` in a terminal, then retry.',
+				'Open Terminal',
+				'Open Settings'
+			);
+
+			if (selection === 'Open Terminal') {
+				const terminal = vscode.window.createTerminal('Codex Login');
+				terminal.show();
+				terminal.sendText(`${codexPath} login`);
+			} else if (selection === 'Open Settings') {
+				await vscode.commands.executeCommand('workbench.action.openSettings', 'superdesign.codexPath');
+			}
+			return;
+		}
+
+		await config.update('llmProvider', 'codex', vscode.ConfigurationTarget.Global);
+		vscode.window.showInformationMessage('✅ Codex CLI is ready. Superdesign will use the Codex app-server provider.');
+	} catch (error) {
+		Logger.error(`Codex CLI setup failed: ${error}`);
+		const selection = await vscode.window.showErrorMessage(
+			`Codex CLI setup failed: ${error}`,
+			'Open Settings'
+		);
+
+		if (selection === 'Open Settings') {
+			await vscode.commands.executeCommand('workbench.action.openSettings', 'superdesign.codexPath');
 		}
 	}
 }
@@ -1928,4 +2004,3 @@ function getNonce() {
 export function deactivate() {
 	Logger.dispose();
 }
-

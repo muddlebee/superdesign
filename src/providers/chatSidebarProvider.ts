@@ -97,8 +97,27 @@ export class ChatSidebarProvider implements vscode.WebviewViewProvider {
 
     private async handleGetCurrentProvider(webview: vscode.Webview) {
         const config = vscode.workspace.getConfiguration('superdesign');
+        const llmProvider = config.get<string>('llmProvider', 'codex');
         const currentProvider = config.get<string>('aiModelProvider', 'anthropic');
         const currentModel = config.get<string>('aiModel');
+
+        if (llmProvider === 'codex') {
+            webview.postMessage({
+                command: 'currentProviderResponse',
+                provider: 'codex',
+                model: 'Codex CLI'
+            });
+            return;
+        }
+
+        if (llmProvider === 'claude-code') {
+            webview.postMessage({
+                command: 'currentProviderResponse',
+                provider: 'claude-code',
+                model: 'Claude Code'
+            });
+            return;
+        }
         
         // If no specific model is set, use defaults
         let defaultModel: string;

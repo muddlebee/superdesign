@@ -488,6 +488,10 @@ Whenever there are UI implementation task, think deeply of the design style firs
         return 'binary';
     }
 
+    async resetSession(): Promise<void> {
+        this.currentSessionId = null;
+    }
+
     // Debug method to help users troubleshoot binary detection
     async debugBinaryDetection(): Promise<string> {
         const results: string[] = [];

@@ -30,6 +30,15 @@ export class ClaudeCodeService {
         }
     }
 
+    async resetSession(): Promise<void> {
+        try {
+            const provider = await this.getCurrentProvider();
+            await provider.resetSession();
+        } catch (error) {
+            Logger.error(`Failed to reset provider session: ${error}`);
+        }
+    }
+
     get isReady(): boolean {
         const currentProvider = this.providerFactory.getCurrentProvider();
         return currentProvider ? currentProvider.isReady() : false;

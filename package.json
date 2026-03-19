@@ -54,6 +54,11 @@
         "category": "Superdesign"
       },
       {
+        "command": "superdesign.setupCodexCli",
+        "title": "Setup Codex CLI",
+        "category": "Superdesign"
+      },
+      {
         "command": "superdesign.configureOpenAIApiKey",
         "title": "Configure OpenAI API Key",
         "category": "Superdesign"
@@ -146,15 +151,23 @@
         "superdesign.llmProvider": {
           "type": "string",
           "enum": [
+            "codex",
             "claude-api",
             "claude-code"
           ],
           "enumDescriptions": [
+            "Use local Codex CLI app-server for streamed chat and tool events",
             "Use Anthropic API key to communicate with Claude via SDK",
             "Use local claude binary for enhanced code execution capabilities"
           ],
-          "default": "claude-api",
+          "default": "codex",
           "description": "Choose the LLM provider to use for AI interactions",
+          "scope": "application"
+        },
+        "superdesign.codexPath": {
+          "type": "string",
+          "default": "codex",
+          "description": "Path to the codex CLI binary used by the Codex app-server provider",
           "scope": "application"
         },
         "superdesign.anthropicApiKey": {

@@ -19,6 +19,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
     const { chatHistory, isLoading, sendMessage, clearHistory, setChatHistory } = useChat(vscode);
     const { isFirstTime, isLoading: isCheckingFirstTime, markAsReturningUser, resetFirstTimeUser } = useFirstTimeUser();
     const [inputMessage, setInputMessage] = useState('');
+    const [selectedProvider, setSelectedProvider] = useState<string>('codex');
     const [selectedModel, setSelectedModel] = useState<string>('claude-4-sonnet-20250514');
     const [expandedTools, setExpandedTools] = useState<Record<string, boolean>>({});
     const [showFullContent, setShowFullContent] = useState<{[key: string]: boolean}>({});
@@ -49,8 +50,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
         const handleMessage = (event: MessageEvent) => {
             const message = event.data;
             if (message.command === 'currentProviderResponse') {
+                setSelectedProvider(message.provider);
                 let fallbackModel: string;
                 switch (message.provider) {
+                    case 'codex':
+                        fallbackModel = 'Codex CLI';
+                        break;
+                    case 'claude-code':
+                        fallbackModel = 'Claude Code';
+                        break;
                     case 'openai':
                         fallbackModel = 'gpt-4o';
                         break;
@@ -64,6 +72,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                 }
                 setSelectedModel(message.model || fallbackModel);
             } else if (message.command === 'providerChanged') {
+                setSelectedProvider(message.provider);
                 setSelectedModel(message.model);
             }
         };
@@ -1440,13 +1449,38 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
                         {/* Agent and Model Selectors with Actions */}
                         <div className="input-controls">
                             <div className="selectors-group">
-                                <div className="selector-wrapper">
-                                    <ModelSelector
-                                        selectedModel={selectedModel}
-                                        onModelChange={handleModelChange}
-                                        disabled={isLoading || showWelcome}
-                                    />
-                                </div>
+                                {selectedProvider === 'codex' || selectedProvider === 'claude-code' ? (
+                                    <div className="selector-wrapper">
+                                        <button
+                                            disabled
+                                            style={{
+                                                background: 'transparent',
+                                                color: 'var(--vscode-foreground)',
+                                                border: 'none',
+                                                outline: 'none',
+                                                fontSize: '11px',
+                                                fontFamily: 'inherit',
+                                                padding: '2px 6px',
+                                                borderRadius: '4px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '3px',
+                                                opacity: 0.7
+                                            }}
+                                        >
+                                            <BrainIcon />
+                                            <span>{selectedProvider === 'codex' ? 'Codex CLI' : 'Claude Code'}</span>
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="selector-wrapper">
+                                        <ModelSelector
+                                            selectedModel={selectedModel}
+                                            onModelChange={handleModelChange}
+                                            disabled={isLoading || showWelcome}
+                                        />
+                                    </div>
+                                )}
                             </div>
                             
                             <div className="input-actions">

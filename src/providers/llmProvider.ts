@@ -53,6 +53,10 @@ export abstract class LLMProvider {
     abstract getProviderName(): string;
     abstract getProviderType(): 'api' | 'binary';
 
+    async resetSession(): Promise<void> {
+        // Default no-op. Providers with persistent threads/sessions can override this.
+    }
+
     protected async ensureInitialized(): Promise<void> {
         if (this.initializationPromise) {
             await this.initializationPromise;
@@ -69,6 +73,7 @@ export abstract class LLMProvider {
 }
 
 export enum LLMProviderType {
+    CODEX = 'codex',
     CLAUDE_API = 'claude-api',
     CLAUDE_CODE = 'claude-code'
 }
@@ -76,6 +81,7 @@ export enum LLMProviderType {
 export interface LLMProviderConfig {
     type: LLMProviderType;
     apiKey?: string;
+    codexPath?: string;
     claudeCodePath?: string;
     modelId?: string;
     thinkingBudgetTokens?: number;

@@ -185,11 +185,14 @@ export class CustomAgentService implements AgentService {
         const config = vscode.workspace.getConfiguration('superdesign');
         const specificModel = config.get<string>('aiModel');
         const provider = config.get<string>('aiModelProvider', 'anthropic');
+        const llmProvider = config.get<string>('llmProvider', 'codex');
         
         // Determine the actual model name being used
         let modelName: string;
         if (specificModel) {
             modelName = specificModel;
+        } else if (llmProvider === 'codex') {
+            modelName = 'codex';
         } else {
             // Use defaults based on provider
             switch (provider) {
@@ -611,14 +614,14 @@ I've created the html design, please reveiw and let me know if you need any chan
             await this.setupWorkingDirectory();
         }
 
-        // Check if claude-code is selected and use ClaudeCodeService instead
+        // Check if a binary-backed provider is selected and use ClaudeCodeService instead
         const config = vscode.workspace.getConfiguration('superdesign');
         const aiModelProvider = config.get<string>('aiModelProvider', 'anthropic');
-        const llmProvider = config.get<string>('llmProvider', 'claude-api');
+        const llmProvider = config.get<string>('llmProvider', 'codex');
         
-        // If either setting is set to claude-code, use ClaudeCodeService
-        if (aiModelProvider === 'claude-code' || llmProvider === 'claude-code') {
-            this.outputChannel.appendLine('Using ClaudeCodeService for claude-code provider');
+        // If either setting is set to a binary provider, use ClaudeCodeService
+        if (aiModelProvider === 'claude-code' || llmProvider === 'claude-code' || llmProvider === 'codex') {
+            this.outputChannel.appendLine(`Using ClaudeCodeService for provider: ${llmProvider}`);
             
             // Convert conversation history to prompt for ClaudeCodeService
             let queryPrompt = '';
@@ -636,7 +639,10 @@ I've created the html design, please reveiw and let me know if you need any chan
             // Use ClaudeCodeService with streaming callback
             const claudeMessages = await this.claudeCodeService.query(
                 queryPrompt,
-                { streaming: true },
+                {
+                    streaming: true,
+                    customSystemPrompt: this.getSystemPrompt()
+                },
                 abortController,
                 onMessage
             );
@@ -950,8 +956,18 @@ I've created the html design, please reveiw and let me know if you need any chan
         return this.workingDirectory;
     }
 
+    async resetConversationSession(): Promise<void> {
+        await this.claudeCodeService.resetSession();
+    }
+
     hasApiKey(): boolean {
         const config = vscode.workspace.getConfiguration('superdesign');
+        const llmProvider = config.get<string>('llmProvider', 'codex');
+
+        if (llmProvider === 'codex' || llmProvider === 'claude-code') {
+            return true;
+        }
+
         const specificModel = config.get<string>('aiModel');
         const provider = config.get<string>('aiModelProvider', 'anthropic');
         const openaiUrl = config.get<string>('openaiUrl');
@@ -988,6 +1004,8 @@ I've created the html design, please reveiw and let me know if you need any chan
         
         const lowerError = errorMessage.toLowerCase();
         return lowerError.includes('api key') ||
+               lowerError.includes('codex login') ||
+               lowerError.includes('no login session') ||
                lowerError.includes('authentication') ||
                lowerError.includes('unauthorized') ||
                lowerError.includes('invalid_api_key') ||
