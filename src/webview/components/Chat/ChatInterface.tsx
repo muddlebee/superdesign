@@ -103,77 +103,37 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
             document.head.appendChild(welcomeStyleElement);
         }
 
-        // Auto-open canvas if not already open
-        const autoOpenCanvas = () => {
-            // Check if canvas panel is already open by looking for the canvas webview
-            vscode.postMessage({
-                command: 'checkCanvasStatus'
-            });
-            
-            // Listen for canvas status response and context messages
-            const handleMessage = (event: MessageEvent) => {
-                const message = event.data;
-                if (message.command === 'canvasStatusResponse') {
-                    if (!message.isOpen) {
-                        // Canvas is not open, auto-open it
-                        console.log('🎨 Auto-opening canvas view...');
-                        vscode.postMessage({
-                            command: 'autoOpenCanvas'
-                        });
-                    }
-                } else if (message.command === 'contextFromCanvas') {
-                    // Handle context from canvas
-                    console.log('📄 Received context from canvas:', message.data);
-                    console.log('📄 Current context before setting:', currentContext);
-                    if (message.data.type === 'clear' || !message.data.fileName) {
-                        setCurrentContext(null);
-                        console.log('📄 Context cleared');
-                    } else {
-                        setCurrentContext(message.data);
-                        console.log('📄 Context set to:', message.data);
-                    }
-                } else if (message.command === 'imageSavedToMoodboard') {
-                    // Handle successful image save with full path
-                    console.log('📎 Image saved with full path:', message.data);
-                    setPendingImages(prev => [...prev, {
-                        fileName: message.data.fileName,
-                        originalName: message.data.originalName,
-                        fullPath: message.data.fullPath
-                    }]);
-                    // Remove from uploading state
-                    setUploadingImages(prev => prev.filter(name => name !== message.data.originalName));
-                } else if (message.command === 'imageSaveError') {
-                    // Handle image save error
-                    console.error('📎 Image save error:', message.data);
-                    setUploadingImages(prev => prev.filter(name => name !== message.data.originalName));
-                } else if (message.command === 'clearChat') {
-                    // Handle clear chat command from toolbar
-                    handleNewConversation();
-                } else if (message.command === 'resetWelcome') {
-                    // Handle reset welcome command from command palette
-                    resetFirstTimeUser();
-                    setShowWelcome(true);
-                    console.log('👋 Welcome screen reset and shown');
-                } else if (message.command === 'setChatPrompt') {
-                    // Handle prompt from canvas floating buttons
-                    console.log('📝 Received prompt from canvas:', message.data.prompt);
-                    setInputMessage(message.data.prompt);
-                }
-            };
-            
-            window.addEventListener('message', handleMessage);
-            
-            // Cleanup listener
-            return () => {
-                window.removeEventListener('message', handleMessage);
-            };
+        const handleMessage = (event: MessageEvent) => {
+            const message = event.data;
+            if (message.command === 'imageSavedToMoodboard') {
+                // Handle successful image save with full path
+                console.log('📎 Image saved with full path:', message.data);
+                setPendingImages(prev => [...prev, {
+                    fileName: message.data.fileName,
+                    originalName: message.data.originalName,
+                    fullPath: message.data.fullPath
+                }]);
+                // Remove from uploading state
+                setUploadingImages(prev => prev.filter(name => name !== message.data.originalName));
+            } else if (message.command === 'imageSaveError') {
+                // Handle image save error
+                console.error('📎 Image save error:', message.data);
+                setUploadingImages(prev => prev.filter(name => name !== message.data.originalName));
+            } else if (message.command === 'clearChat') {
+                // Handle clear chat command from toolbar
+                handleNewConversation();
+            } else if (message.command === 'resetWelcome') {
+                // Handle reset welcome command from command palette
+                resetFirstTimeUser();
+                setShowWelcome(true);
+                console.log('👋 Welcome screen reset and shown');
+            }
         };
-        
-        // Delay the check slightly to ensure chat is fully loaded
-        const timeoutId = setTimeout(autoOpenCanvas, 500);
+
+        window.addEventListener('message', handleMessage);
 
         return () => {
-            clearTimeout(timeoutId);
+            window.removeEventListener('message', handleMessage);
             // Clean up on unmount
             const existingStyle = document.getElementById(styleId);
             if (existingStyle) {
@@ -1303,11 +1263,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ layout, vscode }) => {
             <div className="chat-placeholder__content">
                 <div className="empty-state-message">
                     <p>
-                        <strong>Cursor/Windsurf/Claude Code rules already added</strong>, prompt Cursor/Windsurf/Claude Code to design UI like <kbd>Help me design a calculator UI</kbd> and preview the UI in Superdesign canvas by <kbd>Cmd+Shift+P</kbd> <code>'Superdesign: Open canvas view'</code>
-                    </p>
-                    <div className="empty-state-divider">OR</div>
-                    <p>
-                        You can start with native superdesign agent chat below <em>(We have better UX)</em>
+                        Use your IDE chat to design UI (for example: <kbd>Help me design a calculator UI</kbd>), save output in <code>.superdesign/design_iterations</code>, then preview in canvas via <kbd>Cmd/Ctrl+Shift+P</kbd> <code>Superdesign: Open canvas view</code>.
                     </p>
                 </div>
             </div>

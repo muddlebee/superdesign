@@ -1258,30 +1258,17 @@ html.dark {
 }
 
 function getCanvasActionTarget(): 'superdesign-chat' | 'ide-chat' {
-	const config = vscode.workspace.getConfiguration('superdesign');
-	return config.get<'superdesign-chat' | 'ide-chat'>('canvasActionTarget', 'superdesign-chat');
-}
-
-async function openDesignFileInEditor(filePath?: string): Promise<void> {
-	if (!filePath) {
-		return;
-	}
-	try {
-		const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
-		await vscode.window.showTextDocument(doc, { preview: true });
-	} catch (error) {
-		Logger.warn(`Failed to open design file in editor: ${error}`);
-	}
+	// Canvas-first UX: route all canvas actions to IDE chat.
+	return 'ide-chat';
 }
 
 async function routeIterationToIdeChat(filePath: string | undefined, prompt: string): Promise<void> {
-	await openDesignFileInEditor(filePath);
 	const promptWithContext = filePath
 		? `Design file: ${filePath}\n\n${prompt}`
 		: prompt;
 	await vscode.env.clipboard.writeText(promptWithContext);
 	vscode.window.showInformationMessage(
-		'Iteration prompt copied to clipboard — paste it into your IDE chat (Cmd/Ctrl+V).',
+		'Iteration prompt copied to clipboard. Paste it into your IDE chat (Cmd/Ctrl+V).',
 		'OK'
 	);
 }
@@ -1700,40 +1687,14 @@ class SuperdesignCanvasPanel {
 						Logger.debug(`Frame selected: ${message.data?.fileName}`);
 						break;
 					case 'setContextFromCanvas':
-						if (getCanvasActionTarget() !== 'ide-chat') {
-							// Forward context to chat sidebar
-							this._sidebarProvider.sendMessage({
-								command: 'contextFromCanvas',
-								data: message.data
-							});
-						}
+						// Intentionally no-op in IDE-chat-only mode.
 						break;
 					case 'setChatPrompt':
-						if (getCanvasActionTarget() === 'ide-chat') {
-							await routeIterationToIdeChat(undefined, message.data?.prompt || '');
-						} else {
-							// Forward prompt to chat sidebar
-							this._sidebarProvider.sendMessage({
-								command: 'setChatPrompt',
-								data: message.data
-							});
-						}
+						await routeIterationToIdeChat(undefined, message.data?.prompt || '');
 						break;
 					case 'iterateInIDEChat': {
-						const target = getCanvasActionTarget();
 						const prompt = message.data?.prompt || '';
-						if (target === 'ide-chat') {
-							await routeIterationToIdeChat(message.data?.filePath, prompt);
-						} else {
-							this._sidebarProvider.sendMessage({
-								command: 'setContextFromCanvas',
-								data: { fileName: message.data?.filePath || message.data?.fileName, type: 'frame' }
-							});
-							this._sidebarProvider.sendMessage({
-								command: 'setChatPrompt',
-								data: { prompt }
-							});
-						}
+						await routeIterationToIdeChat(message.data?.filePath, prompt);
 						break;
 					}
 				}

@@ -87,6 +87,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
     const [layoutMode, setLayoutMode] = useState<LayoutMode>('grid');
     const [hierarchyTree, setHierarchyTree] = useState<HierarchyTree | null>(null);
     const [showConnections, setShowConnections] = useState(true);
+    const [copyPromptStatus, setCopyPromptStatus] = useState<'idle' | 'copied'>('idle');
     const transformRef = useRef<ReactZoomPanPinchRef>(null);
 
     console.log('✅ CanvasView state initialized successfully');
@@ -562,6 +563,28 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
+    const handleCopyOnboardingPrompt = async () => {
+        const onboardingPrompt = 'Help me design a calculator UI and save html output to .superdesign/design_iterations/';
+
+        try {
+            await navigator.clipboard.writeText(onboardingPrompt);
+            setCopyPromptStatus('copied');
+        } catch (err) {
+            console.error('Failed to copy onboarding prompt:', err);
+            const textarea = document.createElement('textarea');
+            textarea.value = onboardingPrompt;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            setCopyPromptStatus('copied');
+        }
+
+        setTimeout(() => {
+            setCopyPromptStatus('idle');
+        }, 2000);
+    };
+
     if (isLoading) {
         return (
             <div className="canvas-loading">
@@ -591,8 +614,14 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
         return (
             <div className="canvas-empty">
                 <div className="empty-state">
-                    <h3>No design files found in <code>.superdesign/design_iterations/</code></h3>
-                    <p>Prompt Superdesign OR Cursor/Windsurf/Claude Code to design UI like <kbd>Help me design a calculator UI</kbd> and preview the UI here</p>
+                    <h3>No designs found in <code>.superdesign/design_iterations/</code></h3>
+                    <p>Use your IDE chat to generate your first design file, then it will appear here automatically.</p>
+                    <div className="canvas-onboarding-prompt">
+                        <code>Help me design a calculator UI and save html output to .superdesign/design_iterations/</code>
+                    </div>
+                    <button className="canvas-onboarding-copy-btn" onClick={handleCopyOnboardingPrompt}>
+                        {copyPromptStatus === 'copied' ? 'Copied' : 'Copy Prompt'}
+                    </button>
                 </div>
             </div>
         );

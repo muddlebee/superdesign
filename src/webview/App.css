@@ -895,6 +895,38 @@
     font-family: var(--vscode-editor-font-family);
 }
 
+.canvas-onboarding-prompt {
+    margin: 14px auto 0;
+    max-width: 760px;
+    text-align: left;
+}
+
+.canvas-onboarding-prompt code {
+    display: block;
+    padding: 10px 12px;
+    line-height: 1.45;
+    border: 1px solid var(--vscode-panel-border);
+    border-radius: 6px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.canvas-onboarding-copy-btn {
+    margin-top: 14px;
+    background: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.canvas-onboarding-copy-btn:hover {
+    background: var(--vscode-button-hoverBackground);
+}
+
 /* Design Panel Styles */
 .design-panel {
     flex: 1;
