@@ -188,7 +188,7 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                 platformName = 'IDE Chat';
         }
 
-        const promptText = `Design file: ${file.path}
+        const promptText = `Design file: ${file.relativePath}
 
 Please read this design file and create variations with the following improvements: [add feedback here]
 Save new versions as {design_name}_v{n}.html in the same .superdesign/design_iterations/ folder.`;
@@ -228,7 +228,7 @@ Save new versions as {design_name}_v{n}.html in the same .superdesign/design_ite
         e.preventDefault();
         e.stopPropagation();
         
-        const designPath = `Design file: ${file.path}`;
+        const designPath = `Design file: ${file.relativePath}`;
         
         try {
             await navigator.clipboard.writeText(designPath);

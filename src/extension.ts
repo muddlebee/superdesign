@@ -1894,6 +1894,7 @@ class SuperdesignCanvasPanel {
 						return {
 							name: fileName,
 							path: filePath.fsPath,
+							relativePath: vscode.workspace.asRelativePath(filePath),
 							content: htmlContent,
 							size: stat.size,
 							modified: new Date(stat.mtime),

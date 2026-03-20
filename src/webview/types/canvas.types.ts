@@ -3,6 +3,8 @@
 export interface DesignFile {
     name: string;
     path: string;
+    /** Workspace-relative path (for prompts and copy); `path` remains absolute for host use. */
+    relativePath: string;
     content: string;
     size: number;
     modified: Date;

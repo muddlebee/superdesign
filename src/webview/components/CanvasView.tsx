@@ -271,9 +271,8 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
     const handleFrameSelect = (fileName: string) => {
         setSelectedFrames([fileName]); // Single selection for now
         
-        // Find the selected file to get its full path
         const selectedFile = designFiles.find(file => file.name === fileName);
-        const filePath = selectedFile ? selectedFile.path : fileName;
+        const contextPath = selectedFile ? selectedFile.relativePath : fileName;
         
         const selectMessage: WebviewMessage = {
             command: 'selectFrame',
@@ -281,20 +280,17 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
         };
         vscode.postMessage(selectMessage);
 
-        // Also send context to chat interface with full path
         const contextMessage: WebviewMessage = {
             command: 'setContextFromCanvas',
-            data: { fileName: filePath, type: 'frame' }
+            data: { fileName: contextPath, type: 'frame' }
         };
         vscode.postMessage(contextMessage);
     };
 
     const handleSendToChat = (fileName: string, prompt: string) => {
-        // Find the selected file to get its full path
         const selectedFile = designFiles.find(file => file.name === fileName);
-        const filePath = selectedFile ? selectedFile.path : fileName;
+        const filePath = selectedFile ? selectedFile.relativePath : fileName;
 
-        // Let extension host route to IDE chat or SuperDesign chat based on settings
         const iterateMessage: WebviewMessage = {
             command: 'iterateInIDEChat',
             data: { fileName, filePath, prompt }
