@@ -221,6 +221,20 @@
           "type": "string",
           "description": "Specific AI model to use (e.g., gpt-4o, claude-3-5-sonnet-20241022)",
           "scope": "application"
+        },
+        "superdesign.canvasActionTarget": {
+          "type": "string",
+          "enum": [
+            "superdesign-chat",
+            "ide-chat"
+          ],
+          "enumDescriptions": [
+            "Route canvas iteration actions to the SuperDesign sidebar chat",
+            "Route canvas iteration actions to the IDE built-in chat via clipboard"
+          ],
+          "default": "ide-chat",
+          "description": "Where canvas iteration actions should be routed",
+          "scope": "application"
         }
       }
     }

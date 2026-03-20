@@ -292,20 +292,13 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
         // Find the selected file to get its full path
         const selectedFile = designFiles.find(file => file.name === fileName);
         const filePath = selectedFile ? selectedFile.path : fileName;
-        
-        // Set context first
-        const contextMessage: WebviewMessage = {
-            command: 'setContextFromCanvas',
-            data: { fileName: filePath, type: 'frame' }
+
+        // Let extension host route to IDE chat or SuperDesign chat based on settings
+        const iterateMessage: WebviewMessage = {
+            command: 'iterateInIDEChat',
+            data: { fileName, filePath, prompt }
         };
-        vscode.postMessage(contextMessage);
-        
-        // Then send the prompt to the chat input
-        const promptMessage: WebviewMessage = {
-            command: 'setChatPrompt',
-            data: { prompt }
-        };
-        vscode.postMessage(promptMessage);
+        vscode.postMessage(iterateMessage);
     };
 
     // Canvas control functions

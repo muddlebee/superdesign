@@ -402,7 +402,7 @@ Modern dark mode style like vercel, linear
 ## Workflow
 You should always follow workflow below unless user explicitly ask you to do something else:
 1. Layout design
-2. Theme design (Color, font, spacing, shadown), using generateTheme tool, it should save the css to a local file
+2. Theme design (Color, font, spacing, shadown), save a CSS file in .superdesign/design_iterations/theme_*.css
 3. Core Animation design
 4. Generate a singlehtml file for the UI
 5. You HAVE TO confirm with user step by step, don't do theme design until user sign off the layout design, same for all follownig steps
@@ -415,7 +415,7 @@ And present the layout in ASCII wireframe format, here are the guidelines of goo
 ### 2. Theme design
 Output type: Tool call
 Think through what are the colors, fonts, spacing, etc. 
-You HAVE TO use generateTheme tool to generate the theme, do NOT just output XML type text for tool-call, that is not allowed
+Write a full css theme file (e.g. .superdesign/design_iterations/theme_1.css) and reference it in generated html files
 
 ### 3. Animation design
 Output type: Just text
@@ -426,6 +426,7 @@ Output type: Tool call
 Generate html file for each UI component and then combine them together to form a single html file
 Make sure to reference the theme css file you created in step 2, and add custom ones that doesn't exist yet in html file
 You HAVE TO use write tool to generate the html file, do NOT just output XML type text for tool-call, that is not allowed
+When iterating on an existing design file, always read the current file first and then write a new version as {name}_v{n}.html in .superdesign/design_iterations
 
 <example>
 <user>design an AI chat UI</user>
@@ -620,10 +621,11 @@ I've created the html design, please reveiw and let me know if you need any chan
 </example>
 
 IMPORTANT RULES:
-1. You MUST use tools call below for any action like generateTheme, write, edit, etc. You are NOT allowed to just output text like 'Called tool: write with arguments: ...' or <tool-call>...</tool-call>; MUST USE TOOL CALL (This is very important!!)
+1. You MUST use your host IDE tools to actually write/edit files. Do not only describe a tool call in plain text.
 2. You MUST confirm the layout, and then theme style, and then animation
 3. You MUST use .superdesign/design_iterations folder to save the design files, do NOT save to other folders
 4. You MUST create follow the workflow above
+5. When iterating, always create a new version file in the same folder instead of overwriting the existing design
 
 # Available Tools
 - **read**: Read file contents within the workspace (supports text files, images, with line range options)
@@ -1220,6 +1222,20 @@ html.dark {
 			await vscode.workspace.fs.writeFile(claudeMdPath, Buffer.from(designRuleContent, 'utf8'));
 		}
 
+		// Create or append to AGENTS.md (Codex CLI convention)
+		const agentsMdPath = vscode.Uri.joinPath(workspaceRoot, 'AGENTS.md');
+		try {
+			const existingContent = await vscode.workspace.fs.readFile(agentsMdPath);
+			const currentContent = Buffer.from(existingContent).toString('utf8');
+			if (!currentContent.includes('superdesign: Open Canvas View')) {
+				const updatedContent = currentContent + '\n\n' + designRuleContent;
+				await vscode.workspace.fs.writeFile(agentsMdPath, Buffer.from(updatedContent, 'utf8'));
+			}
+		} catch {
+			// File doesn't exist, create it
+			await vscode.workspace.fs.writeFile(agentsMdPath, Buffer.from(designRuleContent, 'utf8'));
+		}
+
 		// Create or append to .windsurfrules
 		const windsurfRulesPath = vscode.Uri.joinPath(workspaceRoot, '.windsurfrules');
 		try {
@@ -1234,11 +1250,40 @@ html.dark {
 			await vscode.workspace.fs.writeFile(windsurfRulesPath, Buffer.from(designRuleContent, 'utf8'));
 		}
 
-		vscode.window.showInformationMessage('✅ Superdesign project initialized successfully! Created .superdesign folder and design rules for Cursor, Claude, and Windsurf.');
+		vscode.window.showInformationMessage('✅ Superdesign project initialized successfully! Created .superdesign folder and design rules for Cursor, Claude, Codex, and Windsurf.');
 		
 	} catch (error) {
 		vscode.window.showErrorMessage(`Failed to initialize Superdesign project: ${error}`);
 	}
+}
+
+function getCanvasActionTarget(): 'superdesign-chat' | 'ide-chat' {
+	const config = vscode.workspace.getConfiguration('superdesign');
+	return config.get<'superdesign-chat' | 'ide-chat'>('canvasActionTarget', 'superdesign-chat');
+}
+
+async function openDesignFileInEditor(filePath?: string): Promise<void> {
+	if (!filePath) {
+		return;
+	}
+	try {
+		const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(filePath));
+		await vscode.window.showTextDocument(doc, { preview: true });
+	} catch (error) {
+		Logger.warn(`Failed to open design file in editor: ${error}`);
+	}
+}
+
+async function routeIterationToIdeChat(filePath: string | undefined, prompt: string): Promise<void> {
+	await openDesignFileInEditor(filePath);
+	const promptWithContext = filePath
+		? `Design file: ${filePath}\n\n${prompt}`
+		: prompt;
+	await vscode.env.clipboard.writeText(promptWithContext);
+	vscode.window.showInformationMessage(
+		'Iteration prompt copied to clipboard — paste it into your IDE chat (Cmd/Ctrl+V).',
+		'OK'
+	);
 }
 
 export function activate(context: vscode.ExtensionContext) {
@@ -1332,6 +1377,23 @@ export function activate(context: vscode.ExtensionContext) {
 		await configureAnthropicApiKey();
 	});
 
+	const iterateInIDEChatDisposable = vscode.commands.registerCommand(
+		'superdesign.iterateInIDEChat',
+		async (payload?: { filePath?: string; prompt?: string }) => {
+			await routeIterationToIdeChat(payload?.filePath, payload?.prompt || 'Please iterate on this design.');
+		}
+	);
+
+	const createVariationsInIDEChatDisposable = vscode.commands.registerCommand(
+		'superdesign.createVariationsInIDEChat',
+		async (payload?: { filePath?: string; prompt?: string }) => {
+			await routeIterationToIdeChat(
+				payload?.filePath,
+				payload?.prompt || 'Create more variations based on this style.'
+			);
+		}
+	);
+
 	// Set up message handler for auto-canvas functionality
 	sidebarProvider.setMessageHandler((message) => {
 		switch (message.command) {
@@ -1404,6 +1466,9 @@ export function activate(context: vscode.ExtensionContext) {
 		initializeProjectDisposable,
 		openSettingsDisposable,
 		configureApiKeyQuickDisposable
+		,
+		iterateInIDEChatDisposable,
+		createVariationsInIDEChatDisposable
 	);
 }
 
@@ -1626,7 +1691,7 @@ class SuperdesignCanvasPanel {
 
 		// Handle messages from the webview
 		this._panel.webview.onDidReceiveMessage(
-			message => {
+			async message => {
 				switch (message.command) {
 					case 'loadDesignFiles':
 						this._loadDesignFiles();
@@ -1635,19 +1700,42 @@ class SuperdesignCanvasPanel {
 						Logger.debug(`Frame selected: ${message.data?.fileName}`);
 						break;
 					case 'setContextFromCanvas':
-						// Forward context to chat sidebar
-						this._sidebarProvider.sendMessage({
-							command: 'contextFromCanvas',
-							data: message.data
-						});
+						if (getCanvasActionTarget() !== 'ide-chat') {
+							// Forward context to chat sidebar
+							this._sidebarProvider.sendMessage({
+								command: 'contextFromCanvas',
+								data: message.data
+							});
+						}
 						break;
 					case 'setChatPrompt':
-						// Forward prompt to chat sidebar
-						this._sidebarProvider.sendMessage({
-							command: 'setChatPrompt',
-							data: message.data
-						});
+						if (getCanvasActionTarget() === 'ide-chat') {
+							await routeIterationToIdeChat(undefined, message.data?.prompt || '');
+						} else {
+							// Forward prompt to chat sidebar
+							this._sidebarProvider.sendMessage({
+								command: 'setChatPrompt',
+								data: message.data
+							});
+						}
 						break;
+					case 'iterateInIDEChat': {
+						const target = getCanvasActionTarget();
+						const prompt = message.data?.prompt || '';
+						if (target === 'ide-chat') {
+							await routeIterationToIdeChat(message.data?.filePath, prompt);
+						} else {
+							this._sidebarProvider.sendMessage({
+								command: 'setContextFromCanvas',
+								data: { fileName: message.data?.filePath || message.data?.fileName, type: 'frame' }
+							});
+							this._sidebarProvider.sendMessage({
+								command: 'setChatPrompt',
+								data: { prompt }
+							});
+						}
+						break;
+					}
 				}
 			},
 			null,

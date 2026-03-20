@@ -63,6 +63,15 @@ export interface SetChatPromptMessage extends ExtensionMessage {
     };
 }
 
+export interface IterateInIDEChatMessage extends ExtensionMessage {
+    command: 'iterateInIDEChat';
+    data: {
+        fileName: string;
+        filePath: string;
+        prompt: string;
+    };
+}
+
 export interface ErrorMessage extends ExtensionMessage {
     command: 'error';
     data: {
@@ -82,7 +91,8 @@ export type WebviewMessage =
     | LoadDesignFilesMessage 
     | SelectFrameMessage
     | SetContextFromCanvasMessage
-    | SetChatPromptMessage;
+    | SetChatPromptMessage
+    | IterateInIDEChatMessage;
 
 export type ExtensionToWebviewMessage = 
     | DesignFilesLoadedMessage 

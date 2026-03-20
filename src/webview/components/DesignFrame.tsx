@@ -169,6 +169,53 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
         }
     };
 
+    const handleCopyIterationPrompt = async (e: React.MouseEvent, platform?: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        let platformName = '';
+        switch (platform) {
+            case 'cursor':
+                platformName = 'Cursor';
+                break;
+            case 'claude-code':
+                platformName = 'Claude Code';
+                break;
+            case 'windsurf':
+                platformName = 'Windsurf';
+                break;
+            default:
+                platformName = 'IDE Chat';
+        }
+
+        const promptText = `Design file: ${file.path}
+
+Please read this design file and create variations with the following improvements: [add feedback here]
+Save new versions as {design_name}_v{n}.html in the same .superdesign/design_iterations/ folder.`;
+
+        try {
+            await navigator.clipboard.writeText(promptText);
+            setCopyButtonState({ text: `Iteration copied for ${platformName}!`, isSuccess: true });
+            setTimeout(() => {
+                setCopyButtonState({ text: 'Copy prompt', isSuccess: false });
+            }, 2000);
+            setShowCopyDropdown(false);
+        } catch (err) {
+            console.error('❌ Failed to copy iteration prompt:', err);
+            const textarea = document.createElement('textarea');
+            textarea.value = promptText;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            setCopyButtonState({ text: `Iteration copied for ${platformName}!`, isSuccess: true });
+            setTimeout(() => {
+                setCopyButtonState({ text: 'Copy prompt', isSuccess: false });
+            }, 2000);
+            setShowCopyDropdown(false);
+        }
+    };
+
     const handleCopyDropdownToggle = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -732,6 +779,7 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                         
                         {showCopyDropdown && (
                             <div className="copy-dropdown-menu">
+                                <div className="copy-dropdown-section-label">Implement in...</div>
                                 <button
                                     className="copy-dropdown-item"
                                     onClick={(e) => handleCopyPrompt(e, 'cursor')}
@@ -811,6 +859,43 @@ const DesignFrame: React.FC<DesignFrameProps> = ({
                                         onLoad={() => console.log('Bolt logo loaded successfully')}
                                     />
                                     <span>Bolt</span>
+                                </button>
+
+                                <div className="copy-dropdown-divider" />
+                                <div className="copy-dropdown-section-label">Iterate design in...</div>
+
+                                <button
+                                    className="copy-dropdown-item"
+                                    onClick={(e) => handleCopyIterationPrompt(e, 'cursor')}
+                                >
+                                    <img
+                                        src={(window as any).__WEBVIEW_CONTEXT__?.logoUris?.cursor}
+                                        alt="Cursor"
+                                        className="platform-logo"
+                                    />
+                                    <span>Cursor</span>
+                                </button>
+                                <button
+                                    className="copy-dropdown-item"
+                                    onClick={(e) => handleCopyIterationPrompt(e, 'claude-code')}
+                                >
+                                    <img
+                                        src={(window as any).__WEBVIEW_CONTEXT__?.logoUris?.claudeCode}
+                                        alt="Claude Code"
+                                        className="platform-logo"
+                                    />
+                                    <span>Claude Code</span>
+                                </button>
+                                <button
+                                    className="copy-dropdown-item"
+                                    onClick={(e) => handleCopyIterationPrompt(e, 'windsurf')}
+                                >
+                                    <img
+                                        src={(window as any).__WEBVIEW_CONTEXT__?.logoUris?.windsurf}
+                                        alt="Windsurf"
+                                        className="platform-logo"
+                                    />
+                                    <span>Windsurf</span>
                                 </button>
                             </div>
                         )}
