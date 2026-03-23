@@ -1692,17 +1692,20 @@ class SuperdesignCanvasPanel {
 					case 'setChatPrompt':
 						await routeIterationToIdeChat(undefined, message.data?.prompt || '');
 						break;
-					case 'iterateInIDEChat': {
-						const prompt = message.data?.prompt || '';
-						await routeIterationToIdeChat(message.data?.filePath, prompt);
-						break;
-					}
+				case 'iterateInIDEChat': {
+					const prompt = message.data?.prompt || '';
+					await routeIterationToIdeChat(message.data?.filePath, prompt);
+					break;
 				}
-			},
-			null,
-			this._disposables
-		);
-	}
+				case 'initializeSuperdesign':
+					await initializeSuperdesignProject();
+					break;
+			}
+		},
+		null,
+		this._disposables
+	);
+}
 
 	public dispose() {
 		SuperdesignCanvasPanel.currentPanel = undefined;

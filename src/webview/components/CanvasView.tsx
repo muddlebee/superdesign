@@ -88,6 +88,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
     const [hierarchyTree, setHierarchyTree] = useState<HierarchyTree | null>(null);
     const [showConnections, setShowConnections] = useState(true);
     const [copyPromptStatus, setCopyPromptStatus] = useState<'idle' | 'copied'>('idle');
+    const [initializeStatus, setInitializeStatus] = useState<'idle' | 'initializing'>('idle');
     const transformRef = useRef<ReactZoomPanPinchRef>(null);
 
     console.log('✅ CanvasView state initialized successfully');
@@ -581,6 +582,15 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
         }, 2000);
     };
 
+    const handleInitializeSuperdesign = () => {
+        setInitializeStatus('initializing');
+        vscode.postMessage({ command: 'initializeSuperdesign' });
+
+        setTimeout(() => {
+            setInitializeStatus('idle');
+        }, 2000);
+    };
+
     if (isLoading) {
         return (
             <div className="canvas-loading">
@@ -611,13 +621,23 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
             <div className="canvas-empty">
                 <div className="empty-state">
                     <h3>No designs found in <code>.superdesign/design_iterations/</code></h3>
-                    <p>Use your IDE chat to generate your first design file, then it will appear here automatically.</p>
+                    <p>Initialize SuperDesign in this repo, then use your IDE chat to generate your first design file.</p>
+                    <p className="canvas-onboarding-helper">This installs the workspace rules for Cursor, Claude Code, Codex, and Windsurf in the currently opened folder.</p>
                     <div className="canvas-onboarding-prompt">
                         <code>Help me design a calculator UI and save html output to .superdesign/design_iterations/</code>
                     </div>
-                    <button className="canvas-onboarding-copy-btn" onClick={handleCopyOnboardingPrompt}>
-                        {copyPromptStatus === 'copied' ? 'Copied' : 'Copy Prompt'}
-                    </button>
+                    <div className="canvas-onboarding-actions">
+                        <button
+                            className="canvas-onboarding-copy-btn canvas-onboarding-init-btn"
+                            onClick={handleInitializeSuperdesign}
+                            disabled={initializeStatus === 'initializing'}
+                        >
+                            {initializeStatus === 'initializing' ? 'Initializing...' : 'Initialize SuperDesign'}
+                        </button>
+                        <button className="canvas-onboarding-copy-btn" onClick={handleCopyOnboardingPrompt}>
+                            {copyPromptStatus === 'copied' ? 'Copied' : 'Copy Prompt'}
+                        </button>
+                    </div>
                 </div>
             </div>
         );

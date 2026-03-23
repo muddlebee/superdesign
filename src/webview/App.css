@@ -901,6 +901,12 @@
     text-align: left;
 }
 
+.canvas-onboarding-helper {
+    margin: 0 auto;
+    max-width: 760px;
+    line-height: 1.5;
+}
+
 .canvas-onboarding-prompt code {
     display: block;
     padding: 10px 12px;
@@ -925,6 +931,27 @@
 
 .canvas-onboarding-copy-btn:hover {
     background: var(--vscode-button-hoverBackground);
+}
+
+.canvas-onboarding-copy-btn:disabled {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+.canvas-onboarding-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.canvas-onboarding-init-btn {
+    background: var(--vscode-button-secondaryBackground);
+    color: var(--vscode-button-secondaryForeground);
+}
+
+.canvas-onboarding-init-btn:hover:not(:disabled) {
+    background: var(--vscode-button-secondaryHoverBackground);
 }
 
 /* Design Panel Styles */
