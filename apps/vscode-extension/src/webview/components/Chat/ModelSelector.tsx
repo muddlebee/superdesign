@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { BrainIcon } from '../Icons';
+import { BrainIcon } from '@superdesign/canvas-app/icons';
 
 interface ModelSelectorProps {
     selectedModel: string;

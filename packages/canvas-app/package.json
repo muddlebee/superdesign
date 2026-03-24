@@ -1,0 +1,32 @@
+{
+  "name": "@superdesign/canvas-app",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Shared Superdesign canvas UI (VS Code webview + standalone MCP)",
+  "main": "./src/components/CanvasView.tsx",
+  "exports": {
+    ".": "./src/components/CanvasView.tsx",
+    "./transport": "./src/transport/index.ts",
+    "./icons": "./src/components/Icons.tsx",
+    "./canvas.css": "./src/canvas.css",
+    "./standalone": "./src/standalone.tsx"
+  },
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "check-types": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "dependencies": {
+    "lucide-react": "^0.522.0",
+    "react-zoom-pan-pinch": "^3.7.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "esbuild": "^0.25.3",
+    "typescript": "^5.8.3"
+  }
+}

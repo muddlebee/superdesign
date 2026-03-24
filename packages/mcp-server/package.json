@@ -1,0 +1,36 @@
+{
+  "name": "superdesign-mcp",
+  "version": "0.1.0",
+  "description": "MCP server: Superdesign canvas in the browser + design file tools for Codex / Claude Code",
+  "type": "module",
+  "bin": {
+    "superdesign-mcp": "./dist/server.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "prepublishOnly": "npm run build",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "chokidar": "^4.0.3",
+    "express": "^4.21.2",
+    "open": "^10.1.0",
+    "ws": "^8.18.0",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.1",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.0",
+    "@types/ws": "^8.5.13",
+    "esbuild": "^0.25.3",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

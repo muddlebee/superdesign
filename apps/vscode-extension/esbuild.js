@@ -1,7 +1,31 @@
 const esbuild = require("esbuild");
+const path = require("path");
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
+
+const canvasAppRoot = path.resolve(__dirname, "../../packages/canvas-app");
+
+/**
+ * Resolve @superdesign/canvas-app workspace imports for the webview bundle.
+ * @returns {import('esbuild').Plugin}
+ */
+function canvasAppResolvePlugin() {
+	return {
+		name: "canvas-app-resolve",
+		setup(build) {
+			build.onResolve({ filter: /^@superdesign\/canvas-app$/ }, () => ({
+				path: path.join(canvasAppRoot, "src/components/CanvasView.tsx"),
+			}));
+			build.onResolve({ filter: /^@superdesign\/canvas-app\/transport$/ }, () => ({
+				path: path.join(canvasAppRoot, "src/transport/index.ts"),
+			}));
+			build.onResolve({ filter: /^@superdesign\/canvas-app\/icons$/ }, () => ({
+				path: path.join(canvasAppRoot, "src/components/Icons.tsx"),
+			}));
+		},
+	};
+}
 
 /**
  * @type {import('esbuild').Plugin}
@@ -54,7 +78,7 @@ async function main() {
 		platform: 'browser',
 		outfile: 'dist/webview.js',
 		logLevel: 'silent',
-		plugins: [esbuildProblemMatcherPlugin],
+		plugins: [canvasAppResolvePlugin(), esbuildProblemMatcherPlugin],
 		loader: {
 		  '.css': 'text',
 		  '.png': 'file',
@@ -83,8 +107,10 @@ async function main() {
 		
 		// Copy Claude Code SDK to dist for runtime access
 		const fs = require('fs');
-		const path = require('path');
-		const srcPath = path.join(__dirname, 'node_modules', '@anthropic-ai', 'claude-code');
+		let srcPath = path.join(__dirname, 'node_modules', '@anthropic-ai', 'claude-code');
+		if (!fs.existsSync(srcPath)) {
+			srcPath = path.join(__dirname, '../../node_modules/@anthropic-ai/claude-code');
+		}
 		const destPath = path.join(__dirname, 'dist', 'node_modules', '@anthropic-ai', 'claude-code');
 		
 		// Create directory structure
@@ -101,8 +127,12 @@ async function main() {
 			}
 		}
 		
-		copyDir(srcPath, destPath);
-		console.log('Claude Code SDK copied to dist/');
+		if (fs.existsSync(srcPath)) {
+			copyDir(srcPath, destPath);
+			console.log('Claude Code SDK copied to dist/');
+		} else {
+			console.warn('Claude Code SDK not found; skipping copy to dist/');
+		}
 		
 		// Copy assets to dist folder
 		const assetsSrcPath = path.join(__dirname, 'src', 'assets');

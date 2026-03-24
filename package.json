@@ -1,0 +1,19 @@
+{
+  "name": "superdesign-monorepo",
+  "private": true,
+  "description": "Superdesign VS Code extension + shared canvas + MCP server",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @superdesign/canvas-app && npm run compile -w superdesign-official && npm run build -w superdesign-mcp",
+    "build:canvas": "npm run build -w @superdesign/canvas-app",
+    "build:extension": "npm run compile -w superdesign-official",
+    "build:mcp": "npm run build -w superdesign-mcp",
+    "watch:esbuild": "npm run watch:esbuild -w superdesign-official",
+    "watch:tsc": "npm run watch:tsc -w superdesign-official",
+    "watch-tests": "npm run watch-tests -w superdesign-official",
+    "test:e2e": "npm run build && npm run test:e2e -w superdesign-mcp"
+  }
+}

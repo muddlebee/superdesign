@@ -18,6 +18,7 @@ import {
     ConnectionLine
 } from '../types/canvas.types';
 import ConnectionLines from './ConnectionLines';
+import type { ICanvasTransport } from '../transport/transport.interface';
 import {
     ZoomInIcon,
     ZoomOutIcon,
@@ -33,7 +34,7 @@ import {
 } from './Icons';
 
 interface CanvasViewProps {
-    vscode: any;
+    transport: ICanvasTransport;
     nonce: string | null;
 }
 
@@ -63,9 +64,9 @@ const CANVAS_CONFIG: CanvasConfig = {
     }
 };
 
-const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
+const CanvasView: React.FC<CanvasViewProps> = ({ transport, nonce }) => {
     console.log('🎨 CanvasView component starting...');
-    console.log('📞 CanvasView props - vscode:', !!vscode, 'nonce:', nonce);
+    console.log('📞 CanvasView props - transport:', !!transport, 'nonce:', nonce);
     
     const [designFiles, setDesignFiles] = useState<DesignFile[]>([]);
     const [selectedFrames, setSelectedFrames] = useState<string[]>([]);
@@ -195,16 +196,13 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
     }, []);
 
     useEffect(() => {
-        // Request design files from extension
+        // Request design files from host
         const loadMessage: WebviewMessage = {
             command: 'loadDesignFiles'
         };
-        vscode.postMessage(loadMessage);
+        transport.send(loadMessage);
 
-        // Listen for messages from extension
-        const messageHandler = (event: MessageEvent) => {
-            const message: ExtensionToWebviewMessage = event.data;
-            
+        const unsubscribe = transport.subscribe((message: ExtensionToWebviewMessage) => {
             switch (message.command) {
                 case 'designFilesLoaded':
                     // Convert date strings back to Date objects
@@ -257,17 +255,15 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                     break;
 
                 case 'fileChanged':
-                    // Handle file system changes (will implement in Task 2.3)
+                    // Handle file system changes
                     console.log('File changed:', message.data);
-                    // Re-request files when changes occur
-                    vscode.postMessage({ command: 'loadDesignFiles' });
+                    transport.send({ command: 'loadDesignFiles' });
                     break;
             }
-        };
+        });
 
-        window.addEventListener('message', messageHandler);
-        return () => window.removeEventListener('message', messageHandler);
-    }, [vscode]); // Removed currentConfig dependency to prevent constant re-renders
+        return () => unsubscribe();
+    }, [transport]);
 
     const handleFrameSelect = (fileName: string) => {
         setSelectedFrames([fileName]); // Single selection for now
@@ -279,13 +275,13 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
             command: 'selectFrame',
             data: { fileName }
         };
-        vscode.postMessage(selectMessage);
+        transport.send(selectMessage);
 
         const contextMessage: WebviewMessage = {
             command: 'setContextFromCanvas',
             data: { fileName: contextPath, type: 'frame' }
         };
-        vscode.postMessage(contextMessage);
+        transport.send(contextMessage);
     };
 
     const handleSendToChat = (fileName: string, prompt: string) => {
@@ -296,7 +292,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
             command: 'iterateInIDEChat',
             data: { fileName, filePath, prompt }
         };
-        vscode.postMessage(iterateMessage);
+        transport.send(iterateMessage);
     };
 
     // Canvas control functions
@@ -584,7 +580,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
 
     const handleInitializeSuperdesign = () => {
         setInitializeStatus('initializing');
-        vscode.postMessage({ command: 'initializeSuperdesign' });
+        transport.send({ command: 'initializeSuperdesign' });
 
         setTimeout(() => {
             setInitializeStatus('idle');
@@ -839,7 +835,7 @@ const CanvasView: React.FC<CanvasViewProps> = ({ vscode, nonce }) => {
                                     command: 'setContextFromCanvas',
                                     data: { fileName: '', type: 'clear' }
                                 };
-                                vscode.postMessage(clearContextMessage);
+                                transport.send(clearContextMessage);
                             }
                         }}
                     >

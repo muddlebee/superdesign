@@ -74,6 +74,10 @@ export interface IterateInIDEChatMessage extends ExtensionMessage {
     };
 }
 
+export interface InitializeSuperdesignMessage extends ExtensionMessage {
+    command: 'initializeSuperdesign';
+}
+
 export interface ErrorMessage extends ExtensionMessage {
     command: 'error';
     data: {
@@ -94,7 +98,8 @@ export type WebviewMessage =
     | SelectFrameMessage
     | SetContextFromCanvasMessage
     | SetChatPromptMessage
-    | IterateInIDEChatMessage;
+    | IterateInIDEChatMessage
+    | InitializeSuperdesignMessage;
 
 export type ExtensionToWebviewMessage = 
     | DesignFilesLoadedMessage 

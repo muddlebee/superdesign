@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ChatInterface from './components/Chat/ChatInterface';
-import CanvasView from './components/CanvasView';
+import CanvasView from '@superdesign/canvas-app';
+import { createVscodeTransport } from '@superdesign/canvas-app/transport';
 import { WebviewContext } from '../types/context';
 
 // Import CSS as string for esbuild
@@ -13,6 +14,8 @@ const App: React.FC = () => {
         console.log('📞 Acquiring vscode API...');
         return acquireVsCodeApi();
     });
+
+    const [canvasTransport] = useState(() => createVscodeTransport());
     
     const [context, setContext] = useState<WebviewContext | null>(null);
     const [currentView, setCurrentView] = useState<'chat' | 'canvas'>('chat');
@@ -71,10 +74,9 @@ const App: React.FC = () => {
         
         switch (currentView) {
             case 'canvas':
-                console.log('🎨 Rendering CanvasView with vscode:', !!vscode, 'nonce:', nonce);
+                console.log('🎨 Rendering CanvasView, nonce:', nonce);
                 try {
-                    // Canvas view doesn't need context - it gets data from extension directly
-                    return <CanvasView vscode={vscode} nonce={nonce} />;
+                    return <CanvasView transport={canvasTransport} nonce={nonce} />;
                 } catch (error) {
                     console.error('❌ Error rendering CanvasView:', error);
                     return <div>Error rendering canvas: {String(error)}</div>;

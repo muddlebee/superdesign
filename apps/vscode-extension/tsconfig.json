@@ -5,7 +5,6 @@
 	  "outDir": "dist",
 	  "lib": ["ES2020", "DOM", "DOM.Iterable"],
 	  "sourceMap": true,
-	  "rootDir": "src",
 	  "strict": true,
 	  "jsx": "react-jsx",
 	  "esModuleInterop": true,
@@ -15,7 +14,13 @@
 	  "moduleResolution": "node",
 	  "resolveJsonModule": true,
 	  "declaration": false,
-	  "noEmit": false
+	  "noEmit": false,
+	  "baseUrl": ".",
+	  "paths": {
+		"@superdesign/canvas-app": ["../../packages/canvas-app/src/components/CanvasView.tsx"],
+		"@superdesign/canvas-app/transport": ["../../packages/canvas-app/src/transport/index.ts"],
+		"@superdesign/canvas-app/icons": ["../../packages/canvas-app/src/components/Icons.tsx"]
+	  }
 	},
 	"include": [
 	  "src/**/*"
