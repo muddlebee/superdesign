@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import * as z from 'zod';
@@ -8,6 +9,7 @@ import {
 	pushDesignFilesToClients,
 	saveDesignFile,
 	startCanvasSession,
+	stopCanvasSession,
 } from './canvas-server.js';
 
 const WORKFLOW_INSTRUCTIONS = `Superdesign MCP canvas workflow:
@@ -15,6 +17,70 @@ const WORKFLOW_INSTRUCTIONS = `Superdesign MCP canvas workflow:
 2) load_designs() pushes the latest files to any open browser canvas.
 3) wait_for_canvas_action() blocks until the user triggers an action from the canvas (e.g. iterate with feedback). Response JSON: fileName, filePath, prompt, fileContent.
 4) Treat the returned prompt as the next instruction; save a new file and repeat.`;
+
+function printCliHelp(): void {
+	console.log(`superdesign-mcp — MCP server on stdio by default (for Cursor, Codex, Claude Code, etc.).
+
+Usage:
+  superdesign-mcp
+      Start the Model Context Protocol server (JSON-RPC over stdio).
+
+  superdesign-mcp --open-canvas [--no-browser] <workspacePath>
+      Same behavior as the open_canvas tool: HTTP + WebSocket canvas for the project.
+      Prints one JSON line with url and instructions, then runs until Ctrl+C.
+      --no-browser  Do not open a system browser (automation / headless).
+
+With npx, pass arguments after -- so npm does not consume flags:
+  npx -y superdesign-mcp -- --open-canvas "$PWD"
+`);
+}
+
+type OpenCanvasCli = { workspacePath: string; openBrowser: boolean };
+
+function parseOpenCanvasCli(argv: string[]): OpenCanvasCli | 'help' | null {
+	const args = argv.slice(2);
+	if (args.length === 0) {
+		return null;
+	}
+	if (args[0] === '-h' || args[0] === '--help') {
+		return 'help';
+	}
+	if (args[0] !== '--open-canvas') {
+		return null;
+	}
+	const rest = args.slice(1);
+	const openBrowser = !rest.includes('--no-browser');
+	const positional = rest.filter((a) => a !== '--no-browser');
+	if (positional.length === 0) {
+		console.error('error: missing workspacePath after --open-canvas\n');
+		printCliHelp();
+		process.exit(1);
+	}
+	const raw = positional[positional.length - 1]!;
+	const workspacePath = path.isAbsolute(raw) ? raw : path.resolve(process.cwd(), raw);
+	return { workspacePath, openBrowser };
+}
+
+async function runOpenCanvasCli(opts: OpenCanvasCli): Promise<void> {
+	const { url } = await startCanvasSession(opts.workspacePath);
+	if (opts.openBrowser) {
+		await openCanvasInBrowser(url);
+	}
+	console.log(
+		JSON.stringify({
+			url,
+			instructions: WORKFLOW_INSTRUCTIONS,
+			hint: 'Canvas server running; Ctrl+C to stop.',
+		}),
+	);
+	const shutdown = async () => {
+		await stopCanvasSession();
+		process.exit(0);
+	};
+	process.on('SIGINT', () => void shutdown());
+	process.on('SIGTERM', () => void shutdown());
+	setInterval(() => {}, 2147483647);
+}
 
 function workspaceRootOrError(
 	workspacePath: string | undefined,
@@ -28,6 +94,16 @@ function workspaceRootOrError(
 }
 
 async function main(): Promise<void> {
+	const cli = parseOpenCanvasCli(process.argv);
+	if (cli === 'help') {
+		printCliHelp();
+		return;
+	}
+	if (cli) {
+		await runOpenCanvasCli(cli);
+		return;
+	}
+
 	const server = new McpServer({
 		name: 'superdesign-mcp',
 		version: '0.1.0',

@@ -12,6 +12,7 @@
   "scripts": {
     "build": "node esbuild.config.mjs",
     "prepublishOnly": "npm run build",
+    "open:canvas": "node dist/server.cjs --open-canvas",
     "test:e2e": "playwright test"
   },
   "dependencies": {

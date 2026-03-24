@@ -40,3 +40,15 @@ Use this when the **superdesign** MCP server is enabled (Codex, Claude Code, Cur
 ```
 
 For local monorepo development, point `command` to `node` and `args` to `packages/mcp-server/dist/server.cjs` from this repo, run after `npm run build:mcp`.
+
+## CLI (no MCP host)
+
+The same binary as the MCP server can open the canvas from a terminal — equivalent to the **`open_canvas`** tool:
+
+```bash
+npx -y superdesign-mcp -- --open-canvas "$PWD"
+```
+
+Use `--no-browser` to only print the JSON (includes `url`) and keep the server running (automation, remote browsers). With npm/npx, flags must come **after** `--`.
+
+Monorepo: `npm run open:canvas -w superdesign-mcp -- "$(pwd)"` after `npm run build:mcp`.

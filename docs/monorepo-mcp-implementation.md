@@ -72,6 +72,10 @@ Canonical types live in [`packages/canvas-app/src/types/canvas.types.ts`](../pac
 
 Requires an active session and, for `wait_for_canvas_action`, at least one browser tab connected (the canvas page).
 
+### CLI on the same binary
+
+[`packages/mcp-server/src/server.ts`](../packages/mcp-server/src/server.ts) runs the MCP stdio server when there are no CLI flags. With **`--open-canvas [--no-browser] <workspacePath>`**, it performs the same steps as the **`open_canvas`** tool (start session, optional system browser, print one JSON line with `url` + workflow text, keep the process alive until SIGINT). Published installs use `npx -y superdesign-mcp -- --open-canvas "$PWD"` (the `--` is required so npx does not eat flags). Workspace script: `npm run open:canvas -w superdesign-mcp -- <path>`.
+
 ### Build ([`packages/mcp-server/esbuild.config.mjs`](../packages/mcp-server/esbuild.config.mjs))
 
 1. Bundles `src/server.ts` → `dist/server.cjs` (CommonJS, shebang for `bin`; avoids Express + ESM `require` shim issues).
@@ -109,6 +113,7 @@ Requires an active session and, for `wait_for_canvas_action`, at least one brows
 npm install          # root: links workspaces
 npm run build        # canvas-app → extension → mcp-server
 npm run test:e2e     # build + Playwright
+npm run open:canvas -w superdesign-mcp -- "$(pwd)"   # canvas only (after build:mcp)
 ```
 
 - **Run extension**: VS Code launch config uses `--extensionDevelopmentPath=${workspaceFolder}/apps/vscode-extension` (see [`.vscode/launch.json`](../.vscode/launch.json)).
