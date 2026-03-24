@@ -74,7 +74,7 @@ Requires an active session and, for `wait_for_canvas_action`, at least one brows
 
 ### Build ([`packages/mcp-server/esbuild.config.mjs`](../packages/mcp-server/esbuild.config.mjs))
 
-1. Bundles `src/server.ts` → `dist/server.js` (ESM, shebang for `bin`).
+1. Bundles `src/server.ts` → `dist/server.cjs` (CommonJS, shebang for `bin`; avoids Express + ESM `require` shim issues).
 2. Copies `packages/canvas-app/dist/canvas-standalone.js` → `dist/public/canvas-standalone.js`.
 3. Copies logo assets from `apps/vscode-extension/src/assets/` → `dist/public/assets/`.
 
@@ -87,7 +87,7 @@ Requires an active session and, for `wait_for_canvas_action`, at least one brows
 
 ## Agent / CLI guidance
 
-- Repo root [`AGENTS.md`](../AGENTS.md) — recommended MCP loop, naming conventions, example MCP config, local dev pointer (`packages/mcp-server/dist/server.js` after `npm run build:mcp`).
+- Repo root [`AGENTS.md`](../AGENTS.md) — recommended MCP loop, naming conventions, example MCP config, local dev pointer (`packages/mcp-server/dist/server.cjs` after `npm run build:mcp`).
 - `open_canvas` tool result also embeds short **inline instructions** for agents that do not read `AGENTS.md`.
 
 ## End-to-end tests (Playwright)

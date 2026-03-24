@@ -39,4 +39,4 @@ Use this when the **superdesign** MCP server is enabled (Codex, Claude Code, Cur
 }
 ```
 
-For local monorepo development, point `command` to `node` and `args` to `packages/mcp-server/dist/server.js` from this repo, run after `npm run build:mcp`.
+For local monorepo development, point `command` to `node` and `args` to `packages/mcp-server/dist/server.cjs` from this repo, run after `npm run build:mcp`.

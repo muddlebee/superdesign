@@ -6,13 +6,17 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '../..');
 
+// CommonJS: Express and its deps use `require()`; ESM bundles hit esbuild's
+// "Dynamic require is not supported" shim when Cursor runs with Node.
 await esbuild.build({
 	entryPoints: [path.join(__dirname, 'src/server.ts')],
 	bundle: true,
 	platform: 'node',
-	format: 'esm',
-	outfile: path.join(__dirname, 'dist/server.js'),
+	format: 'cjs',
+	outfile: path.join(__dirname, 'dist/server.cjs'),
 	banner: { js: '#!/usr/bin/env node\n' },
+	// `open` resolves __dirname via import.meta.url; empty in a CJS bundle → crash at load.
+	external: ['open'],
 	logLevel: 'info',
 });
 
@@ -37,4 +41,4 @@ if (fs.existsSync(assetsSrc)) {
 	}
 }
 
-console.log('superdesign-mcp build complete (dist/server.js + dist/public/)');
+console.log('superdesign-mcp build complete (dist/server.cjs + dist/public/)');

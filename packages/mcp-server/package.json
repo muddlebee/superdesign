@@ -4,7 +4,7 @@
   "description": "MCP server: Superdesign canvas in the browser + design file tools for Codex / Claude Code",
   "type": "module",
   "bin": {
-    "superdesign-mcp": "./dist/server.js"
+    "superdesign-mcp": "./dist/server.cjs"
   },
   "files": [
     "dist"

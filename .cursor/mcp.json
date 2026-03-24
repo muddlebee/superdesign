@@ -1,5 +1,11 @@
 {
     "mcpServers": {
+        "superdesign": {
+            "command": "node",
+            "args": [
+                "/home/muddles/Codes/ai-tinkering/superdesign/packages/mcp-server/dist/server.cjs"
+            ]
+        },
         "task-master-ai": {
             "command": "npx",
             "args": [

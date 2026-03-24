@@ -16,10 +16,25 @@ import {
 import { designIterationsDir, loadDesignFilesFromDisk } from './design-files.js';
 
 /**
- * Resolve `dist/public` whether this file runs from `src/` (tsx/tests) or `dist/server.js`.
+ * Directory of this module. CJS bundle from esbuild leaves `import.meta.url` empty; then use argv[1] (the MCP entry).
+ */
+function moduleDir(): string {
+	const u = import.meta.url;
+	if (typeof u === 'string' && u.length > 0) {
+		return path.dirname(fileURLToPath(u));
+	}
+	const entry = process.argv[1];
+	if (entry) {
+		return path.dirname(path.resolve(entry));
+	}
+	throw new Error('superdesign-mcp: cannot resolve module directory');
+}
+
+/**
+ * Resolve `dist/public` whether this file runs from `src/` (tsx/tests) or `dist/server.cjs`.
  */
 function resolveCanvasPublicDir(): string {
-	let dir = path.dirname(fileURLToPath(import.meta.url));
+	let dir = moduleDir();
 	for (let i = 0; i < 10 && dir !== path.dirname(dir); i++) {
 		const candidates = [path.join(dir, 'public'), path.join(dir, 'dist', 'public')];
 		for (const pub of candidates) {
